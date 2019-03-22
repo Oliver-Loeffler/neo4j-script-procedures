@@ -13,14 +13,32 @@
   <properties>
     <encoding>UTF-8</encoding>
     <java.version>1.8</java.version>
+    <graal.version>1.0.0-rc14</graal.version>
+    <truffle.version>1.0.0-rc14</truffle.version>
     <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-    <neo4j.version>3.4.10</neo4j.version>
+    <neo4j.version>3.5.3</neo4j.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.graalvm.sdk</groupId>
+      <artifactId>graal-sdk</artifactId>
+      <version>${graal.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.truffle</groupId>
+      <artifactId>truffle-api</artifactId>
+      <version>${truffle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.js</groupId>
+      <artifactId>js</artifactId>
+      <version>${graal.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j</artifactId>
