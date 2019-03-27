@@ -7,6 +7,8 @@ import java.util.stream.StreamSupport;
 import javax.script.ScriptException;
 
 import org.graalvm.polyglot.Value;
+import org.neo4j.graphdb.DependencyResolver;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.core.EmbeddedProxySPI;
 import org.neo4j.kernel.impl.core.GraphProperties;
 import org.neo4j.kernel.impl.core.GraphPropertiesProxy;
