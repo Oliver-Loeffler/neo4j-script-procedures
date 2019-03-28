@@ -19,7 +19,8 @@
 package scripts;
 
 import java.io.File;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.neo4j.graphdb.DependencyResolver;
 import org.neo4j.kernel.configuration.Config;
@@ -77,7 +78,7 @@ public class ScriptsKernelExtensionFactory extends KernelExtensionFactory<Script
 
 		private final JobScheduler scheduler;
 
-		private JobHandle sourceWatcherHandle;
+		private final List<JobHandle> jobHandles = new ArrayList<>();
 
 		ScriptsLifecycle(LogService logService, GraphDatabaseAPI databaseAPI, JobScheduler scheduler) {
 			this.log = logService.getUserLog(ScriptsLifecycle.class);
@@ -99,25 +100,25 @@ public class ScriptsKernelExtensionFactory extends KernelExtensionFactory<Script
 				return;
 			}
 
-			final Optional<Object> pluginsDir = config.getValue(CONFIG_KEY_PLUGINS);
-			final File scriptsDir = pluginsDir
-				.map(File.class::cast)
+			final File scriptsDir = config.getValue(CONFIG_KEY_PLUGINS).map(File.class::cast)
 				.map(plugins -> new File(plugins, "scripts"))
 				.filter(scripts -> scripts.isDirectory() || scripts.mkdir())
-				.orElseThrow(() -> new RuntimeException("Invalid plugins directory!"));
+				.orElseThrow(() -> new RuntimeException("Invalid scripts directory!"));
 
 			log.info("Configuring script folder at %s", scriptsDir);
 
-			final SourceWatcher sourceWatcher = new SourceWatcher(logService, scriptsDir);
-			this.sourceWatcherHandle = this.scheduler.schedule(Group.FILE_IO_HELPER, sourceWatcher);
+			SourceWatcher sourceWatcher = new SourceWatcher(logService, scriptsDir, SourceWatcher.Target.FUNCTIONS);
+			this.jobHandles.add(this.scheduler.schedule(Group.FILE_IO_HELPER, sourceWatcher));
+
+			sourceWatcher = new SourceWatcher(logService, scriptsDir, SourceWatcher.Target.PROCEDURES);
+			this.jobHandles.add(this.scheduler.schedule(Group.FILE_IO_HELPER, sourceWatcher));
 		}
 
 		@Override
 		public void stop() {
 
-			if (this.sourceWatcherHandle != null) {
-				this.sourceWatcherHandle.cancel(true);
-			}
+			this.jobHandles.forEach(handle -> handle.cancel(true));
 		}
 	}
+
 }

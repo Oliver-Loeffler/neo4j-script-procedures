@@ -13,10 +13,5 @@ import org.neo4j.logging.internal.SimpleLogService;
  */
 class SourceWatcherTest {
 
-	public static void main(String...a) throws IOException {
-		SourceWatcher sourceWatcher = new SourceWatcher(new SimpleLogService(FormattedLogProvider.withDefaultLogLevel(
-			Level.DEBUG).toOutputStream(System.out)), new File("/Users/msimons/Desktop/f"));
 
-		sourceWatcher.run();
-	}
 }

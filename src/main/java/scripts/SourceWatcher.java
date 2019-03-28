@@ -38,23 +38,56 @@ import org.neo4j.logging.internal.LogService;
  */
 class SourceWatcher implements Runnable {
 
+	enum Target {
+		FUNCTIONS("functions"),
+		PROCEDURES("procedures");
+
+		private final String dirName;
+
+		private Target(String dirName) {
+			this.dirName = dirName;
+		}
+
+		public String getDirName() {
+			return dirName;
+		}
+	}
+
 	private final Log log;
+
 	private final WatchService watchService;
 	private final Path pathToWatch;
+	private final Target target;
 
-	SourceWatcher(final LogService logService, final File directory) {
-
-		this.log = logService.getUserLog(SourceWatcher.class);
+	SourceWatcher(final LogService logService, final File scriptsDir, final Target target) {
 
 		try {
 			this.watchService = FileSystems.getDefault().newWatchService();
-			this.pathToWatch = directory.toPath();
+			this.pathToWatch = getTargetPath(new File(scriptsDir, target.getDirName()));
 			this.pathToWatch.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
 				StandardWatchEventKinds.ENTRY_DELETE,
 				StandardWatchEventKinds.ENTRY_MODIFY);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+
+		this.log = logService.getUserLog(SourceWatcher.class);
+		this.target = target;
+	}
+
+	private static Path getTargetPath(final File targetDir) throws IOException {
+
+		if (targetDir.exists() && targetDir.isFile()) {
+			throw new IOException(
+				String.format("Target directory %s exists but is a file.", targetDir.getAbsolutePath()));
+		}
+
+		if (!targetDir.isDirectory() && targetDir.mkdirs()) {
+			throw new IOException(
+				String.format("Target directory %s could not be created.", targetDir.getAbsolutePath()));
+		}
+
+		return targetDir.toPath();
 	}
 
 	@Override

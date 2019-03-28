@@ -1,17 +1,22 @@
 package scripts;
 
+import static org.neo4j.internal.kernel.api.procs.Neo4jTypes.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.script.ScriptException;
 
 import org.graalvm.polyglot.Value;
-import org.neo4j.graphdb.DependencyResolver;
-import org.neo4j.kernel.configuration.Config;
+import org.neo4j.internal.kernel.api.procs.Neo4jTypes;
 import org.neo4j.kernel.impl.core.EmbeddedProxySPI;
 import org.neo4j.kernel.impl.core.GraphProperties;
 import org.neo4j.kernel.impl.core.GraphPropertiesProxy;
+import org.neo4j.kernel.impl.proc.Procedures;
+import org.neo4j.kernel.impl.util.DefaultValueMapper;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
@@ -19,6 +24,8 @@ import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 import org.neo4j.procedure.UserFunction;
+import org.neo4j.values.AnyValue;
+import org.neo4j.values.virtual.MapValue;
 
 public class Scripts {
 
@@ -136,6 +143,31 @@ public class Scripts {
     public Stream<Result> list() {
         return StreamSupport.stream(graphProperties.getPropertyKeys().spliterator(), false).filter(s -> s.startsWith(PREFIX )).map(Result::new);
     }
+
+    @UserFunction("scripts.test")
+    public boolean registerFunction(@Name("name") String name) {
+
+        try {
+            Procedures procedures = db.getDependencyResolver().resolveDependency(Procedures.class);
+            procedures.register(new ScriptFunction(name));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public Map<String, Object> functionParams(Object[] input,
+        @Name(value = "inputs", defaultValue = "null") List<List<String>> inputs, DefaultValueMapper mapper) {
+        if (inputs == null)
+            return (Map<String, Object>) ((MapValue) input[0]).map(mapper);
+        Map<String, Object> params = new HashMap<>(input.length);
+        for (int i = 0; i < input.length; i++) {
+            params.put(inputs.get(i).get(0), ((AnyValue) input[i]).map(mapper));
+        }
+        return params;
+    }
+
 
     public static class Result {
         public Object value;
