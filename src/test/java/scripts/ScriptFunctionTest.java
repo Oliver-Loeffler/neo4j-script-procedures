@@ -44,12 +44,11 @@ public class ScriptFunctionTest {
 				.single()
 				.get(0).asLong();
 
-			session.run("RETURN scripts.test('a')");
+			// Brute force register stuff, will be replaced by the watcher facility,
+			session.run("RETURN scripts.test('listNodes', 'function listNodes(l) { return collection(db.findNodes(label(l))); }')");
 
-			StatementResult result = session.run("RETURN scripts.fn.a(['users',null])");
-			Value value = result.single().get("value");
-			System.out.println(">> " + value.asObject());
-			assertThat(value.get(0).asNode().id()).isEqualTo(nodeId);
+			StatementResult result = session.run("RETURN scripts.fn.listNodes('User')");
+			System.out.println(result.single());
 		}
 	}
 }
